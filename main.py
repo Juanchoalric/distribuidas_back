@@ -1,4 +1,11 @@
 from flask import Flask
+import sqlite3 as sql
+
+DB_PATH = "distribuidas.db"
+
+def create_db():
+    conn = sql.connect('database.db')
+    print("Opened database successfully")
 
 app = Flask(__name__)
 
@@ -8,4 +15,5 @@ def hello_world():
 
 
 if __name__ == "__main__":
+    create_db()
     app.run(port=8082)

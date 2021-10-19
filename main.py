@@ -1,18 +1,27 @@
-from flask import Flask
+from flask import Flask, request, jsonify
 import sqlite3 as sql
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
 
 DB_PATH = "distribuidas.db"
 
 app = Flask(__name__)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlalchemy:///home/juanchoalric/Desktop/distribuidas/Distribuidas.sql"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlalchemy:///home/juanchoalric/Desktop/distribuidas/database/distribuidas.db"
 
 db = SQLAlchemy(app)
 
+def addValues():
+    conn = sql.connect("/home/juanchoalric/Desktop/distribuidas/database/distribuidas.db")
+    cursor = conn.cursor()
+    data = [(1, "belgrano"), (2, "chacarita")]
+    cursor.executemany("""INSERT INTO barrios VALUES (?,?)""", data)
+    print(cursor.execute("""SELECT * FROM barrios"""))
+    conn.close()
+
 class Personal(db.Model):
-    __tablename__ = "Personal"
-    legajo = db.Column(db.Integer, primary_key=True)
+    __tablename__ = "personal"
+    legajo = db.Column(db.Integer, primary_key=True, nullable=False)
     nombre = db.Column(db.String, nullable=False)
     apellido  = db.Column(db.String, nullable=False)
     password = db.Column(db.String, nullable=False)
@@ -20,25 +29,62 @@ class Personal(db.Model):
     category = db.Column(db.Integer, nullable=False)
     fechaIngreso = db.Column(db.DateTime, nullable=False)
 
-class Barrios(db.Model):
-    __tablename__ = "Barrios"
+class Barrio(db.Model):
+    __tablename__ = "barrios"
     idBarrio = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String, nullable=False)
 
-class Vecinos(db.Model):
-    __tablename__ = "Vecinos"
+class Vecino(db.Model):
+    __tablename__ = "vecinos"
     documento = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String, nullable=False)
     apellido = db.Column(db.String, nullable=False)
     direccion = db.Column(db.String, nullable=True)
-    codigoBarrio = db.Column(db.Integer, nullable=True)
-    vecinos_barrios = db.Column(db.Integer, db.ForeignKey("Barrios.idBarrio"))
-
-@app.route("/")
-def hello_world():
-    return "<p>Hello, World!</p>"
+    codigoBarrio = db.Column(db.Integer, db.ForeignKey("Barrio.idBarrio") , nullable=True)
+    vecinos_barrios = db.Column(db.Integer)
 
 
-if __name__ == "__main__":
-    create_db()
+
+@app.route("/vecinos", methods=["POST"])
+def create_vecino():
+    data = request.get_json()
+    print(data)
+    new_vecino = Vecino(
+        documento=data["documento"],
+        nombre=data["nombre"],
+        apellido=data["apellido"],
+        direccion=data["direccion"],
+        codigoBarrio=data["codigoBarrio"]
+        )
+    return ""
+
+@app.route("/vecinos/<vecino_id>", methods=["GET"])
+def get_user():
+    return ""
+
+@app.route("/vecinos/<vecino_id>", methods=["PUT"])
+def update_vecino():
+    return ""
+
+@app.route("/personal", methods=["POST"])
+def create_personal():
+    data = request.get_json()
+    print(data)
+    new_personal=Personal(
+        legajo=data["legajo"],
+        nombre=data["nombre"],
+        apellido=data["apellido"],
+        password=generate_password_hash(data["password"], method="sha256"),
+        sector=data["sector"],
+        categoria=data["category"],
+        fechaIngreso=data["fechaIngreso"]
+    )
+
+    db.session.add(new_personal)
+    db.session.commit()
+
+    return jsonify({"message": "New Personal Created"})
+
+
+if (__name__ == "__main__"):
     app.run(port=8082)

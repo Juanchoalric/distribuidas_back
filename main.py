@@ -26,7 +26,7 @@ class Personal(db.Model):
     apellido  = db.Column(db.String, nullable=False)
     password = db.Column(db.String, nullable=False)
     sector = db.Column(db.String, nullable=False)
-    category = db.Column(db.Integer, nullable=False)
+    categoria = db.Column(db.Integer, nullable=False)
     fechaIngreso = db.Column(db.DateTime, nullable=False)
 
 class Barrio(db.Model):
@@ -76,7 +76,7 @@ def create_personal():
         apellido=data["apellido"],
         password=generate_password_hash(data["password"], method="sha256"),
         sector=data["sector"],
-        categoria=data["category"],
+        categoria=data["categoria"],
         fechaIngreso=data["fechaIngreso"]
     )
 

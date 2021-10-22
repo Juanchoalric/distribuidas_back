@@ -2,17 +2,25 @@ from flask import Flask, request, jsonify
 import sqlite3 as sql
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from pathlib import Path
+import os
+from datetime import datetime
 
 DB_PATH = "distribuidas.db"
 
 app = Flask(__name__)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlalchemy:///home/juanchoalric/Desktop/distribuidas/database/distribuidas.db"
+try:
+    home = os.path.abspath(os.getcwd())+'\\database\\distribuidas.db'
+except:
+    home = 'home/juanchoalric/Desktop/distribuidas/database/distribuidas.db'
+
+app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///'+home
 
 db = SQLAlchemy(app)
 
 def addValues():
-    conn = sql.connect("/home/juanchoalric/Desktop/distribuidas/database/distribuidas.db")
+    conn = sql.connect("C:\\Users\\enenadovit\\Desktop\\distribuidas\\distribuidas_back\\database\\distribuidas.db")
     cursor = conn.cursor()
     data = [(1, "belgrano"), (2, "chacarita")]
     cursor.executemany("""INSERT INTO barrios VALUES (?,?)""", data)
@@ -42,7 +50,6 @@ class Vecino(db.Model):
     direccion = db.Column(db.String, nullable=True)
     codigoBarrio = db.Column(db.Integer, db.ForeignKey("Barrio.idBarrio") , nullable=True)
     vecinos_barrios = db.Column(db.Integer)
-
 
 
 @app.route("/vecinos", methods=["POST"])
@@ -77,7 +84,7 @@ def create_personal():
         password=generate_password_hash(data["password"], method="sha256"),
         sector=data["sector"],
         categoria=data["categoria"],
-        fechaIngreso=data["fechaIngreso"]
+        fechaIngreso=datetime.strptime(data["fechaIngreso"], '%d/%m/%Y')
     )
 
     db.session.add(new_personal)

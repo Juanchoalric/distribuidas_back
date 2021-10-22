@@ -29,13 +29,19 @@ def create_table(conn, create_table_sql):
         print(e)
 
 def main():
-    database = "/home/juanchoalric/Desktop/distribuidas/database/distribuidas.db"
+    database = "C:\\Users\\enenadovit\\Desktop\\distribuidas\\distribuidas_back\\database\\distribuidas.db"
+
+    sql_create_personal_table = """ CREATE TABLE IF NOT EXISTS barrios (
+                                        idBarrio integer NOT NULL PRIMARY KEY,
+                                        nombre varchar(150) NOT NULL,
+                                    ); """
 
     sql_create_personal_table = """ CREATE TABLE IF NOT EXISTS personal (
                                         legajo integer NOT NULL PRIMARY KEY,
                                         nombre varchar(150) NOT NULL,
-                                        apellido varchar(50) NOT NULL,
-                                        password varchar(200) NOT NULL,
+                                        apellido varchar(150) NOT NULL,
+                                        password varchar(40) NOT NULL,
+                                        sector varchar(200) NOT NULL,
                                         categoria int,
                                         fechaIngreso datetime
                                     ); """
@@ -45,8 +51,8 @@ def main():
                                     nombre varchar(150) NOT NULL,
                                     apellido varchar(150) NOT NULL,
                                     direccion varchar(250) NULL, 
-                                    codigoBarrio int NULL,
-                                    FOREIGN KEY (codigoBarrio) REFERENCES barrios (id)
+                                    codigoBarrio integer NULL,
+                                    FOREIGN KEY (codigoBarrio) REFERENCES barrios (idBarrio)
                                 );"""
 
     sql_create_sitios_table = """CREATE TABLE IF NOT EXISTS sitios (
@@ -66,21 +72,22 @@ def main():
     
     sql_create_rubros_table = """CREATE TABLE IF NOT EXISTS rubros (
                                     idRubro integer NOT NULL PRIMARY KEY,
-	                                descripcion varchar(200) NOT NULL
+                                    descripcion varchar(200) NOT NULL
                                 );"""
 
     sql_create_desperfectos_table = """CREATE TABLE IF NOT EXISTS desperfectos (
                                     idDesperfecto integer NOT NULL PRIMARY KEY,
-	                                descripcion varchar(200) NOT NULL,
-	                                idRubro integer NULL
+                                    descripcion varchar(200) NOT NULL,
+                                    idRubro integer NULL,
+                                    FOREIGN KEY (idRubro) REFERENCES rubros (idRubro)
                                 );"""
 
     
     sql_create_reclamos_table = """CREATE TABLE IF NOT EXISTS reclamos (
-                                    idReclamo int NOT NULL PRIMARY KEY,
+                                    idReclamo integer NOT NULL PRIMARY KEY,
                                     documento varchar(20) NOT NULL,
-                                    idSitio int NOT NULL,
-                                    idDesperfecto int NULL,
+                                    idSitio integer NOT NULL,
+                                    idDesperfecto integer NULL,
                                     descripcion varchar(1000) NULL,
                                     estado varchar(30),
                                     IdReclamoUnificado int NULL,
@@ -130,7 +137,7 @@ def main():
         create_table(conn, sql_create_personal_table)
         create_table(conn, sql_create_vecinos_table)
         create_table(conn, sql_create_sitios_table)
-        create_table(conn,sql_create_reclamos_table)
+        create_table(conn, sql_create_reclamos_table)
         create_table(conn, sql_create_rubros_table)
         create_table(conn, sql_create_denuncias_table)
         create_table(conn, sql_create_desperfectos_table)

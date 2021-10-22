@@ -6,13 +6,13 @@ BASE_URL = 'http://localhost:8082'
 # Create Personal [POST]
 def create_personal(base_url: str):
     personal = {
-        "legajo": 123434323,
+        "legajo": 1231,
         "nombre": "pepe",
         "apellido": "popo",
         "sector": "oscuro",
         "categoria": 8,
         "password": "1234",
-        "fechaIngreso": datetime.datetime.now().strftime("%Y-%m-%d"),
+        "fechaIngreso": "12/03/2021",
     }
     request = requests.post(f"{base_url}/personal", json=personal)
 

@@ -31,9 +31,9 @@ def create_table(conn, create_table_sql):
 def main():
     database = "C:\\Users\\enenadovit\\Desktop\\distribuidas\\distribuidas_back\\database\\distribuidas.db"
 
-    sql_create_personal_table = """ CREATE TABLE IF NOT EXISTS barrios (
+    sql_create_barrios_table = """ CREATE TABLE IF NOT EXISTS barrios (
                                         idBarrio integer NOT NULL PRIMARY KEY,
-                                        nombre varchar(150) NOT NULL,
+                                        nombre varchar(150) NOT NULL
                                     ); """
 
     sql_create_personal_table = """ CREATE TABLE IF NOT EXISTS personal (
@@ -142,8 +142,8 @@ def main():
         create_table(conn, sql_create_denuncias_table)
         create_table(conn, sql_create_desperfectos_table)
         create_table(conn, sql_create_movimientosReclamo_table)
-        create_table(conn, sql_create_denuncias_table)
         create_table(conn, sql_create_movimientosDenuncia_table)
+        create_table(conn, sql_create_barrios_table)
 
 
     else:

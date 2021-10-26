@@ -9,7 +9,7 @@ from pathlib import Path
 import os
 from datetime import datetime
 
-from schemas.schemas import PersonalSchema
+from schemas.schemas import PersonalSchema, BarrioSchema, VecinoSchema
 
 DB_PATH = "distribuidas.db"
 
@@ -25,6 +25,8 @@ app.config["SQLALCHEMY_DATABASE_URI"] = home
 db = SQLAlchemy(app)
 
 personal_schema = PersonalSchema(many=True)
+barrio_schema = BarrioSchema(many=True)
+vecino_schema = VecinoSchema(many=True)
 
 def addValues():
     conn = sql.connect("C:\\Users\\enenadovit\\Desktop\\distribuidas\\distribuidas_back\\database\\distribuidas.db")
@@ -44,8 +46,6 @@ class Personal(db.Model):
     categoria = db.Column(db.Integer, nullable=False)
     fechaIngreso = db.Column(db.DateTime, nullable=False)
 
-    def as_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 class Barrio(db.Model):
     __tablename__ = "barrios"
@@ -58,30 +58,60 @@ class Vecino(db.Model):
     nombre = db.Column(db.String, nullable=False)
     apellido = db.Column(db.String, nullable=False)
     direccion = db.Column(db.String, nullable=True)
-    codigoBarrio = db.Column(db.Integer, db.ForeignKey("Barrio.idBarrio") , nullable=True)
-    vecinos_barrios = db.Column(db.Integer)
+    codigoBarrio = db.Column(db.Integer, db.ForeignKey("barrios.idBarrio"))
 
 
-@app.route("/vecinos", methods=["POST"])
-def create_vecino():
-    data = request.get_json()
-    print(data)
-    new_vecino = Vecino(
-        documento=data["documento"],
-        nombre=data["nombre"],
-        apellido=data["apellido"],
-        direccion=data["direccion"],
-        codigoBarrio=data["codigoBarrio"]
+@app.route("/barrio", methods=["POST", "GET"])
+def create_barrio():
+    if request.method == "POST":
+        data = request.get_json()
+
+        new_barrio = Barrio(
+            idBarrio=data.get("idBarrio"),
+            nombre=data.get("nombre")
         )
-    return ""
+
+        db.session.add(new_barrio)
+        db.session.commit()
+
+        return jsonify({"message": "Barrio created"})
+    if request.method == "GET":
+        barrios = db.session.query(Barrio).all()
+        return jsonify(barrio_schema.dump(barrios))
+
+
+@app.route("/vecinos", methods=["POST", "GET"])
+def create_vecino():
+    if request.method == "POST":
+        data = request.get_json()
+        print(data)
+        new_vecino = Vecino(
+            documento=data["documento"],
+            nombre=data["nombre"],
+            apellido=data["apellido"],
+            direccion=data["direccion"],
+            codigoBarrio=data["codigoBarrio"]
+            )
+
+        db.session.add(new_vecino)
+        db.session.commit()
+        return jsonify({"message": "Vecino created"})
+
+    if request.method == "GET":
+        vecinos = db.session.query(Vecino).all()
+        vecinos = vecino_schema.dump(vecinos)
+        return jsonify(vecino_schema.dump(vecinos))
+
 
 @app.route("/vecinos/<vecino_id>", methods=["GET"])
 def get_user():
     return ""
 
+
 @app.route("/vecinos/<vecino_id>", methods=["PUT"])
 def update_vecino():
     return ""
+
 
 @app.route("/personal", methods=["POST"])
 def create_personal():
@@ -102,11 +132,13 @@ def create_personal():
 
     return jsonify({"message": "New Personal Created"})
 
+
 @app.route("/personal", methods=["GET"])
 def get_personal():
     personal = db.session.query(Personal).all()
     personal = personal_schema.dump(personal)
     return jsonify(personal)
 
-if (__name__ == "__main__"):
+
+if __name__ == "__main__":
     app.run(port=8082)

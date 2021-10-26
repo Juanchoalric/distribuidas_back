@@ -1,23 +1,30 @@
+import json
+
 from flask import Flask, request, jsonify
 import sqlite3 as sql
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy.ext.declarative import DeclarativeMeta
 from pathlib import Path
 import os
 from datetime import datetime
+
+from schemas.schemas import PersonalSchema
 
 DB_PATH = "distribuidas.db"
 
 app = Flask(__name__)
 
 try:
-    home = os.path.abspath(os.getcwd())+'\\database\\distribuidas.db'
+    home = 'sqlite:////' + 'home/juanchoalric/Desktop/distribuidas/database/distribuidas.db'
 except:
-    home = 'home/juanchoalric/Desktop/distribuidas/database/distribuidas.db'
+    home = 'sqlite:///' + os.path.abspath(os.getcwd())+'\\database\\distribuidas.db'
 
-app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///'+home
+app.config["SQLALCHEMY_DATABASE_URI"] = home
 
 db = SQLAlchemy(app)
+
+personal_schema = PersonalSchema(many=True)
 
 def addValues():
     conn = sql.connect("C:\\Users\\enenadovit\\Desktop\\distribuidas\\distribuidas_back\\database\\distribuidas.db")
@@ -36,6 +43,9 @@ class Personal(db.Model):
     sector = db.Column(db.String, nullable=False)
     categoria = db.Column(db.Integer, nullable=False)
     fechaIngreso = db.Column(db.DateTime, nullable=False)
+
+    def as_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 class Barrio(db.Model):
     __tablename__ = "barrios"
@@ -87,11 +97,16 @@ def create_personal():
         fechaIngreso=datetime.strptime(data["fechaIngreso"], '%d/%m/%Y')
     )
 
-    db.session.add(new_personal)
+    db.session.add(json.dump(new_personal))
     db.session.commit()
 
     return jsonify({"message": "New Personal Created"})
 
+@app.route("/personal", methods=["GET"])
+def get_personal():
+    personal = db.session.query(Personal).all()
+    personal = personal_schema.dump(personal)
+    return jsonify(personal)
 
 if (__name__ == "__main__"):
     app.run(port=8082)

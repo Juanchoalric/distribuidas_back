@@ -29,7 +29,7 @@ def create_table(conn, create_table_sql):
         print(e)
 
 def main():
-    database = "C:\\Users\\enenadovit\\Desktop\\distribuidas\\distribuidas_back\\database\\distribuidas.db"
+    database = "/home/juanchoalric/Desktop/distribuidas/database/distribuidas.db"
 
     sql_create_barrios_table = """ CREATE TABLE IF NOT EXISTS barrios (
                                         idBarrio integer NOT NULL PRIMARY KEY,

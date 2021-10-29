@@ -9,7 +9,7 @@ from pathlib import Path
 import os
 from datetime import datetime
 
-from schemas.schemas import PersonalSchema, BarrioSchema, VecinoSchema
+from schemas.schemas import PersonalSchema, BarrioSchema, VecinoSchema, SitioSchema, ReclamoSchema, DenunciaSchema, MovimientosReclamoSchema, MovimientosDenunciaSchema, RubroSchema, DesperfectoSchema
 
 DB_PATH = "distribuidas.db"
 
@@ -21,12 +21,21 @@ except:
     home = 'sqlite:///' + os.path.abspath(os.getcwd())+'\\database\\distribuidas.db'
 
 app.config["SQLALCHEMY_DATABASE_URI"] = home
+app.config["MONG_DBNAME"] = "seminario"
+app.config["MONGO_URI"] = "mongodb+srv://dbuser:Mvkvemu7tfb691sS@cluster0.hobus.mongodb.net/seminario?retryWrites=true&w=majority"
 
 db = SQLAlchemy(app)
 
 personal_schema = PersonalSchema(many=True)
 barrio_schema = BarrioSchema(many=True)
 vecino_schema = VecinoSchema(many=True)
+sitio_schema = SitioSchema(many=True)
+rubro_schema = RubroSchema(many=True)
+reclamo_schema = ReclamoSchema(many=True)
+denuncia_schema = DenunciaSchema(many=True)
+desperfecto_schema = DesperfectoSchema(many=True)
+movimientos_reclamo_schema = MovimientosReclamoSchema(many=True)
+movimientos_denuncia_schema = MovimientosDenunciaSchema(many=True)
 
 def addValues():
     conn = sql.connect("C:\\Users\\enenadovit\\Desktop\\distribuidas\\distribuidas_back\\database\\distribuidas.db")
@@ -52,6 +61,7 @@ class Barrio(db.Model):
     idBarrio = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String, nullable=False)
 
+
 class Vecino(db.Model):
     __tablename__ = "vecinos"
     documento = db.Column(db.Integer, primary_key=True)
@@ -59,6 +69,210 @@ class Vecino(db.Model):
     apellido = db.Column(db.String, nullable=False)
     direccion = db.Column(db.String, nullable=True)
     codigoBarrio = db.Column(db.Integer, db.ForeignKey("barrios.idBarrio"))
+
+
+class Sitio(db.Model):
+    __tablename__ = "sitios"
+    idSitio = db.column(db.Integer, primary_key=True)
+    latitud = db.Column(db.Numeric(9, 5), nullable=False)
+    longitud = db.Column(db.Numeric(9, 5), nullable=False)
+    calle = db.Column(db.String, nullable=True)
+    numero = db.column(db.Integer, nullable=True)
+    entreCalleA = db.Column(db.String, nullable=True)
+    entreCalleB = db.Column(db.String, nullable=True)
+    descripcion = db.Column(db.String, nullable=True)
+    aCargoDe = db.Column(db.String, nullable=True)
+    apertura = db.Column(db.Time, nullable=True)
+    cierre = db.Column(db.Time, nullable=True)
+    comentatios = db.Column(db.Text, nullable=True)
+
+
+class Rubro(db.Model):
+    __tablename__ = "rubros"
+    idRubro = db.column(db.Integer, primary_key=True)
+    descripcion = db.column(db.String, nullable=False)
+
+
+class Desperfecto(db.Model):
+    __tablename__ = "desperfectos"
+    idDesperfecto = db.Column(db.Integer, primary_key=True)
+    descripcion = db.column(db.String, nullable=False)
+    idRubro = db.Column(db.Integer, db.ForeignKey("rubros.idRubro"))
+
+
+class Reclamo(db.Model):
+    __tablename__ = "reclamos"
+    idReclamo = db.column(db.Integer, primary_key=True)
+    documento = db.Column(db.String, db.ForeignKey("vecinos.documento"))
+    descripcion = db.column(db.String, nullable=True)
+    estado = db.column(db.String)
+    idSitio = db.Column(db.Integer, db.ForeignKey("sitios.idSitio"))
+    idDesperfecto = db.Column(db.Integer, db.ForeignKey("desperfectos.idDesperfecto"))
+    IdReclamoUnificado = db.Column(db.Integer, db.ForeignKey("reclamos.idReclamo"))
+
+class Denuncia(db.Model):
+    idDenuncia = db.Column(db.Integer, primary_key=True)
+    documento = db.Column(db.String, db.ForeignKey("vecinos.documento"), nullable=False)
+    idSitio = db.Column(db.Integer, db.ForeignKey("sitios.idSitio"), nullable=True)
+    descripcion = db.Column(db.String, nullable=True)
+    estado = db.Column(db.String)
+    aceptaResponsabilidad = db.Column(db.Integer, nullable=False)
+    
+
+class MovimientosReclamo(db.model):
+    __tablename__ = "movimientosReclamo"
+    idMovimiento = db.Column(db.Integer, primary_key=True)
+    responsable = db.Column(db.String, nullable=False)
+    causa = db.Column(db.String, nullable=False)
+    fecha = db.Column(db.DateTime)
+    idReclamo = db.Column(db.Integer, db.ForeignKey("reclamos.idReclamo"))
+
+class MovimientosDenuncia(db.Model):
+    __tablename__ = "movimientosDenuncia"
+    idMovimiento = db.Column(db.Integer, primary_key=True)
+    responsable = db.Column(db.String, nullable=False)
+    causa = db.Column(db.String, nullable=False)
+    fecha = db.Column(db.DateTime)
+    idDenuncia = db.Column(db.Integer, db.ForeignKey("denuncias.idDenuncia"))
+
+
+
+@app.route("/sitio", methods=["POST", "GET"])
+def create_sitio():
+    if request.method == "POST":
+        data = request.get_json()
+
+        new_sitio = Sitio(
+            idSitio = data.get("idSitio"),
+            latitud = data.get("latitud"),
+            longitud = data.get("longitud"),
+            calle = data.get("calle"),
+            numero = data.get("numero"),
+            entreCalleA = data.get("entreCalleA"),
+            entreCalleB = data.get("entreCalleB"),
+            descripcion = data.get("descripcion"),
+            aCargoDe = data.get("aCargoDe"),
+            apertura = data.get("apertura"),
+            cierre = data.get("cierre"),
+            comentarios = data.get("comentarios")
+        )
+
+        db.session.add(new_sitio)
+        db.session.commit()
+    if request.method == "GET":
+        sitios = db.session.query(Sitio).all()
+        return jsonify(sitio_schema.dump(sitios))
+
+@app.route("/rubros", methods=["GET", "POST"])
+def create_rubros():
+    if request.method == "POST":
+        data = request.get_json()
+
+        new_rubro = Rubro(
+            idRubro = data["idRubro"],
+            description = data["description"],
+        )
+
+        db.session.add(new_rubro)
+        db.session.commit()
+    if request.method == "GET":
+        rubros = db.session.query(Rubro).all()
+        return jsonify(rubro_schema.dump(rubros))
+    
+@app.route("/reclamo", methods=["GET", "POST"])
+def create_reclamo():
+    if request.method == "POST":
+        data = request.get_json()
+
+        new_reclamo = Reclamo(
+            idReclamo=data["idReclamo"],
+            documento = data["documento"],
+            idSitio = data["idSitio"],
+            idDesperfecto = data["idDesperfecto"],
+            description = data["description"],
+            estado = data["estado"],
+            idReclamoUnique=data["idReclamoUnique"],
+        )
+    
+        db.session.add(new_reclamo)
+        db.session.commit()
+
+    if request.method == "GET":
+        reclamos = db.session.query(Reclamo).all()
+        return jsonify(reclamo_schema.dump(reclamos))
+
+@app.route('/despecfecto', methods=['GET', 'POST'])
+def create_desperfecto():
+    
+    if request.method == "POST":
+        data = request.get_json()
+
+        new_desperfecto = Desperfecto(
+            idDesperfecto = data['idDesperfecto'],
+            description = data['description'],
+            idRubro = data['idRubro'],
+        )
+
+        db.session.add(new_desperfecto)
+        db.session.commit()
+    
+    if request.method == 'GET':
+        desperfectos = db.session.query(Desperfecto).all()
+        return jsonify(desperfecto_schema.dump(desperfectos))
+
+
+@app.route('/denuncia', methods=['POST', "GET"])
+def create_denuncia():
+    if request.method == 'POST':
+        data = request.get_json()
+        new_denuncia = Denuncia(
+            idDenuncia = data["idDenuncia"],
+            documento = data["documento"],
+            idSitio = data["idSitio"],
+            description = data["description"],
+            estado = data["estado"],
+            aceptaResponsabilidad = data["aceptaResponsabilidad"],
+        )
+        db.session.add(new_denuncia)
+        db.session.commit()
+    if request.method == "GET":
+        denuncias = db.session.query(Denuncia).all()
+        return jsonify(denuncia_schema.dump(denuncias))
+
+@app.route('/movimientosReclamo', methods=["GET", "POST"])
+def create_movimientos_reclamo():
+    if request.method == "POST":
+        data = request.get_json()
+        new_movimientos_reclamo = MovimientosReclamo(
+            idMovimiento = data["idMovimiento"],
+            idReclamo = data["idReclamo"],
+            responsable = data["responsable"],
+            causa = data["causa"],
+            fecha = datetime.strptime(data["fecha"], '%Y-%m-%d %H:%M:%S.%f')
+        )
+
+        db.session.add(new_movimientos_reclamo)
+        db.session.commit()
+    if request.method == "GET":
+        movimientos_reclamo = db.session.query(MovimientosReclamo).all()
+        return jsonify(movimientos_reclamo_schema.dump(movimientos_reclamo))
+
+@app.route('/movimientosDenuncia', methods=["GET", "POST"])
+def create_movimientos_denuncia():
+    if request.method == "POST":
+        data = request.get_json()
+        new_movimientos_denuncia = MovimientosDenuncia(
+            idMovimiento=data["idMovimiento"],
+            idDenuncia=data["idDenuncia"],
+            responsable = data["responsable"],
+            causa = data["causa"],
+            fecha = datetime.strptime(data["fecha"], '%Y-%m-%d %H:%M:%S.%f'),
+        )
+        db.session.add(new_movimientos_denuncia)
+        db.session.commit()
+    if request.method == "GET":
+        movimientos_denuncia = db.session.query(MovimientosDenuncia).all()
+        return jsonify(movimientos_denuncia_schema.dump(movimientos_denuncia))
 
 
 @app.route("/barrio", methods=["POST", "GET"])

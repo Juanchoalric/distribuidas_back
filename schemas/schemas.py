@@ -1,4 +1,4 @@
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, post_load, ValidationError
 
 
 class PersonalSchema(Schema):
@@ -24,8 +24,8 @@ class VecinoSchema(Schema):
 
 class SitioSchema(Schema):
     idSitio = fields.Integer()
-    latitud = fields.decimal()
-    longitud = fields.decimal()
+    latitud = fields.Number()
+    longitud = fields.Number()
     calle = fields.String()
     numero = fields.Integer()
     entreCalleA = fields.String()
@@ -35,6 +35,16 @@ class SitioSchema(Schema):
     apertura = fields.Time()
     cierre = fields.Time()
     comentarios = fields.String()
+
+class PublicacionSchema(Schema):
+    idPublicidad = fields.Integer()
+    documento = fields.Integer()
+    titulo = fields.String()
+    descripcion = fields.String()
+    type = fields.String()
+    open = fields.String()
+    close = fields.String()
+
 
 class RubroSchema(Schema):
     idRubro = fields.Integer()

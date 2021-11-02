@@ -97,3 +97,7 @@ class MovimientosDenunciaSchema(Schema):
 class PersonalLogin(Schema):
     legajo = fields.Integer()
     password = fields.String()
+
+class VecinoStoragePass(Schema):
+    documento = fields.Integer()
+    password = fields.String()

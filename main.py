@@ -13,7 +13,7 @@ from marshmallow import ValidationError
 from datetime import datetime
 import base64
 
-from schemas.schemas import PublicacionSchema, ReclamoImagenSchema, PersonalLogin, PersonalSchema, BarrioSchema, VecinoSchema, SitioSchema, ReclamoSchema, DenunciaSchema, MovimientosReclamoSchema, MovimientosDenunciaSchema, RubroSchema, DesperfectoSchema
+from schemas.schemas import VecinoStoragePass, VerifiedVecinoSchema, PublicacionSchema, ReclamoImagenSchema, PersonalLogin, PersonalSchema, BarrioSchema, VecinoSchema, SitioSchema, ReclamoSchema, DenunciaSchema, MovimientosReclamoSchema, MovimientosDenunciaSchema, RubroSchema, DesperfectoSchema
 
 DB_PATH = "distribuidas.db"
 
@@ -55,6 +55,8 @@ movimientos_denuncia_single_schema = MovimientosDenunciaSchema()
 publicaciones_schema = PublicacionSchema(many=True)
 publicacion_schema = PublicacionSchema()
 personal_login_schema = PersonalLogin()
+verify_vecino_schema = VerifiedVecinoSchema()
+vecino_register_password = VecinoStoragePass()
 
 def addValues():
     conn = sql.connect("C:\\Users\\enenadovit\\Desktop\\distribuidas\\distribuidas_back\\database\\distribuidas.db")
@@ -422,6 +424,41 @@ def create_vecino():
         vecinos = vecino_schema.dump(vecinos)
         return jsonify(vecino_schema.dump(vecinos))
 
+@app.route("/vecinos/verified/<documento>", methods=["GET"])
+def is_user_verified(documento):
+    vecino = db_mongo.verified_vecino.find_one({"documento": documento})
+    if vecino:
+        return jsonify({"message": True})
+    
+    return jsonify({"message": False})
+
+@app.route("/vecinos/create_password", methods=["POST"])
+def vecino_create_password():
+    data = request.get_json()
+    vecino = db_mongo.verified_vecino.find_one({"documento": documento})
+    if not vecino:
+        return jsonify({"message": "No autorizado"})
+    data = vecino_register_password.load(data)
+    db_mongo.vecinos.insert_one({
+        "documento": data["documento"], 
+        "password" : generate_password_hash(data["password"], method="sha256")
+        })
+    return jsonify({"message": "password created"})
+
+@app.route("/vecino/login", methods=["POST"])
+def vecino_login():
+    data = request.get_json()
+    data = vecino_register_password.load(data)
+
+    vecino = db_mongo.vecinos.find_one({"documento": data["documento"]})
+
+    if not vecino:
+        return jsonify({"message": "El documento o password son erroneos"})
+    
+    if check_password_hash(vecino.password, data["password"]):
+        return jsonify(vecino_register_password.dump(vecino))
+    
+    
 
 @app.route("/vecinos/<vecino_id>", methods=["GET"])
 def get_user():

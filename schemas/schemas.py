@@ -9,6 +9,9 @@ class PersonalSchema(Schema):
     categoria = fields.Integer()
     fecha = fields.Date()
 
+class VerifiedVecinoSchema():
+    documento = fields.Integer()
+
 
 class BarrioSchema(Schema):
     idBarrio = fields.Integer()
@@ -57,16 +60,21 @@ class DesperfectoSchema(Schema):
 
 class ReclamoSchema(Schema):
     idReclamo = fields.Integer()
-    documento = fields.String()
+    documento = fields.Integer()
     idSitio = fields.Integer()
     idDesperfecto = fields.Integer()
     descripcion = fields.String()
     estado = fields.String()
     idReclamoUnique = fields.Integer()
 
+class ReclamoImagenSchema(Schema):
+    idReclamo = fields.Integer()
+    documento = fields.Integer()
+    imagen = fields.List(fields.String())
+
 class DenunciaSchema(Schema):
     idDenuncia = fields.Integer()
-    documento = fields.String()
+    documento = fields.Integer()
     idSitio = fields.Integer()
     descripcion = fields.String()
     estado = fields.String()
@@ -85,3 +93,7 @@ class MovimientosDenunciaSchema(Schema):
     responsable = fields.String()
     causa = fields.String()
     fecha = fields.DateTime()
+
+class PersonalLogin(Schema):
+    legajo = fields.Integer()
+    password = fields.String()

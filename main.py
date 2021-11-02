@@ -8,10 +8,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.ext.declarative import DeclarativeMeta
 from pathlib import Path
 import os
+import random
 from marshmallow import ValidationError
 from datetime import datetime
+import base64
 
-from schemas.schemas import PublicacionSchema, PersonalSchema, BarrioSchema, VecinoSchema, SitioSchema, ReclamoSchema, DenunciaSchema, MovimientosReclamoSchema, MovimientosDenunciaSchema, RubroSchema, DesperfectoSchema
+from schemas.schemas import PublicacionSchema, ReclamoImagenSchema, PersonalLogin, PersonalSchema, BarrioSchema, VecinoSchema, SitioSchema, ReclamoSchema, DenunciaSchema, MovimientosReclamoSchema, MovimientosDenunciaSchema, RubroSchema, DesperfectoSchema
 
 DB_PATH = "distribuidas.db"
 
@@ -41,6 +43,7 @@ rubro_schema = RubroSchema(many=True)
 rubro_single_schema = RubroSchema()
 reclamo_schema = ReclamoSchema(many=True)
 reclamo_single_schema = ReclamoSchema()
+reclamo_images_schema = ReclamoImagenSchema()
 denuncia_schema = DenunciaSchema(many=True)
 denuncia_single_schema = DenunciaSchema()
 desperfecto_schema = DesperfectoSchema(many=True)
@@ -51,6 +54,7 @@ movimientos_denuncia_schema = MovimientosDenunciaSchema(many=True)
 movimientos_denuncia_single_schema = MovimientosDenunciaSchema()
 publicaciones_schema = PublicacionSchema(many=True)
 publicacion_schema = PublicacionSchema()
+personal_login_schema = PersonalLogin()
 
 def addValues():
     conn = sql.connect("C:\\Users\\enenadovit\\Desktop\\distribuidas\\distribuidas_back\\database\\distribuidas.db")
@@ -155,6 +159,7 @@ def create_publicidad():
     if request.method == "POST":
         data = request.get_json()
         try:
+            data["idPublicidad"] = random.getrandbits(64)
             data = publicacion_schema.load(data)
         except ValidationError as e:
             return jsonify(e.messages)
@@ -178,6 +183,7 @@ def create_sitio():
     if request.method == "POST":
         data = request.get_json()
         try:
+            data["idSitio"] = random.getrandbits(64)
             data = sitio_single_schema.load(data)
         except ValidationError as e:
             return jsonify(e.messages)
@@ -208,6 +214,7 @@ def create_rubros():
     if request.method == "POST":
         data = request.get_json()
         try:
+            data["idRubro"] = random.getrandbits(64)
             data = rubro_single_schema.load(data)
         except ValidationError as e:
             return jsonify(e.messages)
@@ -228,7 +235,16 @@ def create_reclamo():
     if request.method == "POST":
         data = request.get_json()
         try:
+            images_string = []
+            images = request.files["images"]
+        except:
+            return jsonify({"message": "No images passed"})
+        try:
+            data["idReclamo"] = random.getrandbits(64)
             data = reclamo_single_schema.load(data)
+            for image in images:
+                images_string.append(base64.b64encode(image.read()))
+            data["images"] = images_string
         except ValidationError as e:
             return jsonify(e.messages)
 
@@ -241,13 +257,22 @@ def create_reclamo():
             estado = data["estado"],
             idReclamoUnique=data["idReclamoUnique"],
         )
+
+        db_mongo.reclamo_images.insert_one({
+            "images": data["images"], 
+            "idReclamo": data["idReclamo"], 
+            "documento": data["documento"]})
     
         db.session.add(new_reclamo)
         db.session.commit()
 
     if request.method == "GET":
         reclamos = db.session.query(Reclamo).all()
-        return jsonify(reclamo_schema.dump(reclamos))
+        reclamos = reclamo_schema.dump(reclamos)
+        for reclamo in reclamos:
+            reclamo_images = db_mongo.reclamo_images.find_one({"_id": reclamo["idReclamo"]})
+            reclamo["images"] = reclamo_images["images"]
+        return jsonify(reclamo)
 
 @app.route('/despecfecto', methods=['GET', 'POST'])
 def create_desperfecto():
@@ -255,6 +280,7 @@ def create_desperfecto():
     if request.method == "POST":
         data = request.get_json()
         try:
+            data["idDesperfecto"] = random.getrandbits(64)
             data = desperfecto_single_schema.load(data)
         except ValidationError as e:
             return jsonify(e.messages)
@@ -278,6 +304,7 @@ def create_denuncia():
     if request.method == 'POST':
         data = request.get_json()
         try:
+            data["idDenuncia"] = random.getrandbits(64)
             data = denuncia_single_schema.load(data)
         except ValidationError as e:
             return jsonify(e.messages)
@@ -301,6 +328,7 @@ def create_movimientos_reclamo():
     if request.method == "POST":
         data = request.get_json()
         try:
+            data["idMovimiento"] = random.getrandbits(64)
             data = movimientos_reclamo_single_schema.load(data)
         except ValidationError as e:
             return jsonify(e.messages)
@@ -324,6 +352,7 @@ def create_movimientos_denuncia():
     if request.method == "POST":
         data = request.get_json()
         try:
+            data["idMovimiento"] = random.getrandbits(64)
             data = movimientos_denuncia_single_schema.load(data)
         except ValidationError as e:
             return jsonify(e.messages)
@@ -348,6 +377,7 @@ def create_barrio():
         data = request.get_json()
 
         try:
+            data["idBarrio"] = random.getrandbits(64)
             data = movimientos_reclamo_single_schema.load(data)
         except ValidationError as e:
             return jsonify(e.messages)
@@ -426,6 +456,24 @@ def create_personal():
 
     return jsonify({"message": "New Personal Created"})
 
+@app.route("/personal/<legajo>", methods=["GET"])
+def get_one_personal(legajo):
+
+    personal = Personal.query.filter_by(legajo=legajo).first()
+
+    if not personal:
+        return jsonify({"message": "No Personal Found"})
+    
+    personal_data = {
+        "legajo" : personal.legajo,
+        "nombre" : personal.nombre,
+        "apellido" : personal.apellido,
+        "sector" : personal.sector,
+        "categoria" : personal.categoria,
+        "fechaIngreso" : personal.fechaIngreso,
+    }
+
+    return jsonify(personal_data)
 
 @app.route("/personal", methods=["GET"])
 def get_personal():
@@ -433,6 +481,15 @@ def get_personal():
     personal = personal_schema.dump(personal)
     return jsonify(personal)
 
+@app.route("/personal/login", methods=["POST"])
+def login_personal():
+    data = request.get_json()
+    data = personal_login_schema.load(data)
+    personal = db.session.query(Personal).filter_by(legajo=data["legajo"]).first()
 
+    if check_password_hash(personal.password, data["password"]):
+        return jsonify(personal_single_schema.dump(personal))
+    
+    return {"mensaje": "No existe el usuario ingresado"}
 if __name__ == "__main__":
     app.run(port=8082)

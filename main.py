@@ -460,7 +460,7 @@ def create_vecino():
 
 @app.route("/vecinos/verified/<documento>", methods=["GET"])
 def is_user_verified(documento):
-    vecino = db_mongo.verified_vecino.find_one({"documento": documento})
+    vecino = db_mongo.verified_vecino.find_one({"_id": documento})
     if vecino:
         return jsonify({"message": True})
     

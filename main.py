@@ -11,6 +11,7 @@ import os
 import random
 from marshmallow import ValidationError
 from datetime import datetime
+from sys import platform
 import base64
 
 from schemas.schemas import CreatePersonalSchema, VecinoStoragePass, VerifiedVecinoSchema, PublicacionSchema, ReclamoImagenSchema, PersonalLogin, PersonalSchema, BarrioSchema, VecinoSchema, SitioSchema, ReclamoSchema, DenunciaSchema, MovimientosReclamoSchema, MovimientosDenunciaSchema, RubroSchema, DesperfectoSchema
@@ -19,10 +20,9 @@ DB_PATH = "distribuidas.db"
 
 app = Flask(__name__)
 
-try:
+if platform == "win32":
     home = 'sqlite:///' + os.path.abspath(os.getcwd())+'\\database\\distribuidas.db'
-
-except:
+else:
     home = 'sqlite:////' + 'home/juanchoalric/Desktop/distribuidas/database/distribuidas.db'
 
 app.config["SQLALCHEMY_DATABASE_URI"] = home

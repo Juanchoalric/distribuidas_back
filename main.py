@@ -472,13 +472,14 @@ def vecino_login():
     data = request.get_json()
     data = vecino_register_password.load(data)
 
-    vecino = db_mongo.vecinos.find_one({"documento": data["documento"]})
+    vecino = db_mongo.vecinos.find_one({"_id": data["documento"]})
 
     if not vecino:
         return jsonify({"message": "El documento o password son erroneos"})
     
-    if check_password_hash(vecino.password, data["password"]):
-        return jsonify(vecino_register_password.dump(vecino))
+    if check_password_hash(vecino["password"], data["password"]):
+        vecino = db.session.query(Vecino).filter_by(documento=data["documento"]).first()
+        return jsonify(vecino_single_schema.dump(vecino))
     
     
 

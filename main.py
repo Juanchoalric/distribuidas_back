@@ -166,7 +166,7 @@ def create_publicidad():
             data["idPublicidad"] = random.getrandbits(64)
             data = publicacion_schema.load(data)
         except ValidationError as e:
-            return jsonify(e.messages)
+            return jsonify(e.messages, 404)
         db_mongo.publicidad.insert_one({
             "_id": data["idPublicidad"],
             "documento": data["documento"],
@@ -190,7 +190,7 @@ def create_sitio():
             data["idSitio"] = random.getrandbits(20)
             data = sitio_single_schema.load(data)
         except ValidationError as e:
-            return jsonify(e.messages)
+            return jsonify(e.messages, 404)
 
         apertura = datetime.strptime(data["apertura"] ,"%H:%M:%S")
         cierre = datetime.strptime(data["cierre"] ,"%H:%M:%S")
@@ -224,7 +224,7 @@ def create_rubros():
             data["idRubro"] = random.getrandbits(10)
             data = rubro_single_schema.load(data)
         except ValidationError as e:
-            return jsonify(e.messages)
+            return jsonify(e.messages, 404)
 
         new_rubro = Rubro(
             idRubro = data["idRubro"],
@@ -255,8 +255,9 @@ def create_reclamo():
             #for image in images:
             #    images_string.append(base64.b64encode(image.read()))
             #data["images"] = images_string
+            return jsonify(data)
         except ValidationError as e:
-            return jsonify(e.messages)
+            return jsonify(e.messages, 404)
 
         new_reclamo = Reclamo(
             idReclamo=data["idReclamo"],
@@ -289,7 +290,7 @@ def create_reclamo():
 def get_reclamo(idReclamo):
     reclamo = db.session.query(Reclamo).filter_by(idReclamo=idReclamo).first()
     if not reclamo:
-        return jsonify({"message": "Reclamo mal ingresado"})
+        return jsonify({"message": "Reclamo mal ingresado"}, 404)
     reclamo = reclamo_single_schema.dump(reclamo)
     return jsonify(reclamo)
 
@@ -303,7 +304,7 @@ def create_desperfecto():
             data["idDesperfecto"] = random.getrandbits(10)
             data = desperfecto_single_schema.load(data)
         except ValidationError as e:
-            return jsonify(e.messages)
+            return jsonify(e.messages, 404)
 
         new_desperfecto = Desperfecto(
             idDesperfecto = data['idDesperfecto'],
@@ -327,7 +328,7 @@ def create_denuncia():
             data["idDenuncia"] = random.getrandbits(64)
             data = denuncia_single_schema.load(data)
         except ValidationError as e:
-            return jsonify(e.messages)
+            return jsonify(e.messages, 404)
 
         new_denuncia = Denuncia(
             idDenuncia = data["idDenuncia"],
@@ -351,7 +352,7 @@ def create_movimientos_reclamo():
             data["idMovimiento"] = random.getrandbits(64)
             data = movimientos_reclamo_single_schema.load(data)
         except ValidationError as e:
-            return jsonify(e.messages)
+            return jsonify(e.messages, 404)
 
         new_movimientos_reclamo = MovimientosReclamo(
             idMovimiento = data["idMovimiento"],
@@ -375,7 +376,7 @@ def create_movimientos_denuncia():
             data["idMovimiento"] = random.getrandbits(64)
             data = movimientos_denuncia_single_schema.load(data)
         except ValidationError as e:
-            return jsonify(e.messages)
+            return jsonify(e.messages, 404)
 
         new_movimientos_denuncia = MovimientosDenuncia(
             idMovimiento=data["idMovimiento"],
@@ -400,7 +401,7 @@ def create_barrio():
             data["idBarrio"] = random.getrandbits(64)
             data = movimientos_reclamo_single_schema.load(data)
         except ValidationError as e:
-            return jsonify(e.messages)
+            return jsonify(e.messages, 404)
 
         new_barrio = Barrio(
             idBarrio=data.get("idBarrio"),
@@ -421,7 +422,7 @@ def vecino_create_password():
     data = request.get_json()
     vecino = db_mongo.verified_vecino.find_one({"_id": data.get("documento")})
     if vecino:
-        return jsonify({"message": "No autorizado"})
+        return jsonify({"message": "No autorizado"}, 404)
     data = vecino_register_password.load(data)
     db_mongo.vecinos.insert_one({
         "_id": data["documento"],
@@ -437,7 +438,7 @@ def create_vecino():
         try:
             data = vecino_single_schema.load(data)
         except ValidationError as e:
-            return jsonify(e.messages)
+            return jsonify(e.messages, 404)
 
         new_vecino = Vecino(
             documento=data["documento"],
@@ -497,7 +498,7 @@ def create_personal():
     try:
         data = create_personal_schema.load(data)
     except ValidationError as e:
-        return jsonify(e.messages)
+        return jsonify(e.messages, 404)
 
     new_personal=Personal(
         legajo=data["legajo"],
@@ -548,6 +549,7 @@ def login_personal():
     if check_password_hash(personal.password, data["password"]):
         return jsonify(personal_single_schema.dump(personal))
     
-    return {"mensaje": "No existe el usuario ingresado"}
+    return jsonify({"mensaje": "No existe el usuario ingresado", "code": 404}), 404
+
 if __name__ == "__main__":
     app.run(port=8082)

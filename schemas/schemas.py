@@ -7,7 +7,16 @@ class PersonalSchema(Schema):
     apellido = fields.String()
     sector = fields.String()
     categoria = fields.Integer()
-    fecha = fields.Date()
+    fechaIngreso = fields.String()
+
+class CreatePersonalSchema(Schema):
+    legajo = fields.Integer()
+    nombre = fields.String()
+    apellido = fields.String()
+    sector = fields.String()
+    categoria = fields.Integer()
+    fechaIngreso = fields.String()
+    password = fields.String()
 
 class VerifiedVecinoSchema():
     documento = fields.Integer()

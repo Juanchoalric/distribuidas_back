@@ -13,16 +13,17 @@ from marshmallow import ValidationError
 from datetime import datetime
 import base64
 
-from schemas.schemas import VecinoStoragePass, VerifiedVecinoSchema, PublicacionSchema, ReclamoImagenSchema, PersonalLogin, PersonalSchema, BarrioSchema, VecinoSchema, SitioSchema, ReclamoSchema, DenunciaSchema, MovimientosReclamoSchema, MovimientosDenunciaSchema, RubroSchema, DesperfectoSchema
+from schemas.schemas import CreatePersonalSchema, VecinoStoragePass, VerifiedVecinoSchema, PublicacionSchema, ReclamoImagenSchema, PersonalLogin, PersonalSchema, BarrioSchema, VecinoSchema, SitioSchema, ReclamoSchema, DenunciaSchema, MovimientosReclamoSchema, MovimientosDenunciaSchema, RubroSchema, DesperfectoSchema
 
 DB_PATH = "distribuidas.db"
 
 app = Flask(__name__)
 
 try:
-    home = 'sqlite:////' + 'home/juanchoalric/Desktop/distribuidas/database/distribuidas.db'
-except:
     home = 'sqlite:///' + os.path.abspath(os.getcwd())+'\\database\\distribuidas.db'
+
+except:
+    home = 'sqlite:////' + 'home/juanchoalric/Desktop/distribuidas/database/distribuidas.db'
 
 app.config["SQLALCHEMY_DATABASE_URI"] = home
 app.config["MONG_DBNAME"] = "distribuidas"
@@ -33,6 +34,7 @@ db_mongo = PyMongo(app).db
 
 personal_schema = PersonalSchema(many=True)
 personal_single_schema = PersonalSchema()
+create_personal_schema = CreatePersonalSchema()
 barrio_schema = BarrioSchema(many=True)
 barrio_single_schema = BarrioSchema()
 vecino_schema = VecinoSchema(many=True)
@@ -474,7 +476,7 @@ def update_vecino():
 def create_personal():
     data = request.get_json()
     try:
-        data = personal_single_schema.load(data)
+        data = create_personal_schema.load(data)
     except ValidationError as e:
         return jsonify(e.messages)
 
@@ -488,7 +490,7 @@ def create_personal():
         fechaIngreso=datetime.strptime(data["fechaIngreso"], '%d/%m/%Y')
     )
 
-    db.session.add(json.dump(new_personal))
+    db.session.add(new_personal)
     db.session.commit()
 
     return jsonify({"message": "New Personal Created"})

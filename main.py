@@ -107,7 +107,7 @@ class Sitio(db.Model):
     aCargoDe = db.Column(db.String, nullable=True)
     apertura = db.Column(db.Time, nullable=True)
     cierre = db.Column(db.Time, nullable=True)
-    comentatios = db.Column(db.Text, nullable=True)
+    comentarios = db.Column(db.Text, nullable=True)
 
 
 class Rubro(db.Model):
@@ -187,11 +187,14 @@ def create_sitio():
     if request.method == "POST":
         data = request.get_json()
         try:
-            data["idSitio"] = random.getrandbits(64)
+            data["idSitio"] = random.getrandbits(20)
             data = sitio_single_schema.load(data)
         except ValidationError as e:
             return jsonify(e.messages)
 
+        apertura = datetime.strptime(data["apertura"] ,"%H:%M:%S")
+        cierre = datetime.strptime(data["cierre"] ,"%H:%M:%S")
+        print(type(apertura))
         new_sitio = Sitio(
             idSitio = data.get("idSitio"),
             latitud = data.get("latitud"),
@@ -202,8 +205,8 @@ def create_sitio():
             entreCalleB = data.get("entreCalleB"),
             descripcion = data.get("descripcion"),
             aCargoDe = data.get("aCargoDe"),
-            apertura = data.get("apertura"),
-            cierre = data.get("cierre"),
+            apertura = apertura.time(),
+            cierre = cierre.time(),
             comentarios = data.get("comentarios")
         )
 
@@ -213,23 +216,24 @@ def create_sitio():
         sitios = db.session.query(Sitio).all()
         return jsonify(sitio_schema.dump(sitios))
 
-@app.route("/rubros", methods=["GET", "POST"])
+@app.route("/rubro", methods=["GET", "POST"])
 def create_rubros():
     if request.method == "POST":
         data = request.get_json()
         try:
-            data["idRubro"] = random.getrandbits(64)
+            data["idRubro"] = random.getrandbits(10)
             data = rubro_single_schema.load(data)
         except ValidationError as e:
             return jsonify(e.messages)
 
         new_rubro = Rubro(
             idRubro = data["idRubro"],
-            description = data["description"],
+            descripcion = data["descripcion"],
         )
 
         db.session.add(new_rubro)
         db.session.commit()
+        return jsonify({"message": "Rubro created"})
     if request.method == "GET":
         rubros = db.session.query(Rubro).all()
         return jsonify(rubro_schema.dump(rubros))
@@ -238,17 +242,19 @@ def create_rubros():
 def create_reclamo():
     if request.method == "POST":
         data = request.get_json()
+        """
         try:
             images_string = []
             images = request.files["images"]
         except:
             return jsonify({"message": "No images passed"})
+        """
         try:
-            data["idReclamo"] = random.getrandbits(64)
+            data["idReclamo"] = random.getrandbits(10)
             data = reclamo_single_schema.load(data)
-            for image in images:
-                images_string.append(base64.b64encode(image.read()))
-            data["images"] = images_string
+            #for image in images:
+            #    images_string.append(base64.b64encode(image.read()))
+            #data["images"] = images_string
         except ValidationError as e:
             return jsonify(e.messages)
 
@@ -257,47 +263,57 @@ def create_reclamo():
             documento = data["documento"],
             idSitio = data["idSitio"],
             idDesperfecto = data["idDesperfecto"],
-            description = data["description"],
+            descripcion = data["descripcion"],
             estado = data["estado"],
-            idReclamoUnique=data["idReclamoUnique"],
+            IdReclamoUnificado=data.get("IdReclamoUnificado", None),
         )
-
+        """
         db_mongo.reclamo_images.insert_one({
             "images": data["images"], 
             "idReclamo": data["idReclamo"], 
             "documento": data["documento"]})
-    
+        """
         db.session.add(new_reclamo)
         db.session.commit()
-
+        return jsonify({"message": "Reclamo Created"})
     if request.method == "GET":
         reclamos = db.session.query(Reclamo).all()
         reclamos = reclamo_schema.dump(reclamos)
-        for reclamo in reclamos:
-            reclamo_images = db_mongo.reclamo_images.find_one({"_id": reclamo["idReclamo"]})
-            reclamo["images"] = reclamo_images["images"]
-        return jsonify(reclamo)
+        #for reclamo in reclamos:
+        #    reclamo_images = db_mongo.reclamo_images.find_one({"_id": reclamo["idReclamo"]})
+        #    reclamo["images"] = reclamo_images["images"]
+        return jsonify(reclamos)
 
-@app.route('/despecfecto', methods=['GET', 'POST'])
+
+@app.route("/reclamo/<idReclamo>", methods=["GET"])
+def get_reclamo(idReclamo):
+    reclamo = db.session.query(Reclamo).filter_by(idReclamo=idReclamo).first()
+    if not reclamo:
+        return jsonify({"message": "Reclamo mal ingresado"})
+    reclamo = reclamo_single_schema.dump(reclamo)
+    return jsonify(reclamo)
+
+
+@app.route('/desperfecto', methods=['GET', 'POST'])
 def create_desperfecto():
     
     if request.method == "POST":
         data = request.get_json()
         try:
-            data["idDesperfecto"] = random.getrandbits(64)
+            data["idDesperfecto"] = random.getrandbits(10)
             data = desperfecto_single_schema.load(data)
         except ValidationError as e:
             return jsonify(e.messages)
 
         new_desperfecto = Desperfecto(
             idDesperfecto = data['idDesperfecto'],
-            description = data['description'],
+            descripcion = data['descripcion'],
             idRubro = data['idRubro'],
         )
 
         db.session.add(new_desperfecto)
         db.session.commit()
-    
+        return jsonify({"message": "Desperfecto Created"})
     if request.method == 'GET':
         desperfectos = db.session.query(Desperfecto).all()
         return jsonify(desperfecto_schema.dump(desperfectos))
@@ -400,6 +416,20 @@ def create_barrio():
         return jsonify(barrio_schema.dump(barrios))
 
 
+@app.route("/vecinos/create_password", methods=["POST"])
+def vecino_create_password():
+    data = request.get_json()
+    vecino = db_mongo.verified_vecino.find_one({"_id": data.get("documento")})
+    if vecino:
+        return jsonify({"message": "No autorizado"})
+    data = vecino_register_password.load(data)
+    db_mongo.vecinos.insert_one({
+        "_id": data["documento"],
+        "password": generate_password_hash(data["password"], method="sha256")
+    })
+    return jsonify({"message": "password created"})
+
+
 @app.route("/vecinos", methods=["POST", "GET"])
 def create_vecino():
     if request.method == "POST":
@@ -426,6 +456,7 @@ def create_vecino():
         vecinos = vecino_schema.dump(vecinos)
         return jsonify(vecino_schema.dump(vecinos))
 
+
 @app.route("/vecinos/verified/<documento>", methods=["GET"])
 def is_user_verified(documento):
     vecino = db_mongo.verified_vecino.find_one({"documento": documento})
@@ -434,18 +465,6 @@ def is_user_verified(documento):
     
     return jsonify({"message": False})
 
-@app.route("/vecinos/create_password", methods=["POST"])
-def vecino_create_password():
-    data = request.get_json()
-    vecino = db_mongo.verified_vecino.find_one({"documento": documento})
-    if not vecino:
-        return jsonify({"message": "No autorizado"})
-    data = vecino_register_password.load(data)
-    db_mongo.vecinos.insert_one({
-        "documento": data["documento"], 
-        "password" : generate_password_hash(data["password"], method="sha256")
-        })
-    return jsonify({"message": "password created"})
 
 @app.route("/vecino/login", methods=["POST"])
 def vecino_login():

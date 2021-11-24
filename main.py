@@ -166,7 +166,7 @@ def create_publicidad():
             data["idPublicidad"] = random.getrandbits(64)
             data = publicacion_schema.load(data)
         except ValidationError as e:
-            return jsonify(e.messages, 404)
+            return jsonify(e.messages, 404), 404
         db_mongo.publicidad.insert_one({
             "_id": data["idPublicidad"],
             "documento": data["documento"],
@@ -190,7 +190,7 @@ def create_sitio():
             data["idSitio"] = random.getrandbits(20)
             data = sitio_single_schema.load(data)
         except ValidationError as e:
-            return jsonify(e.messages, 404)
+            return jsonify(e.messages, 404), 404
 
         apertura = datetime.strptime(data["apertura"] ,"%H:%M:%S")
         cierre = datetime.strptime(data["cierre"] ,"%H:%M:%S")
@@ -224,7 +224,7 @@ def create_rubros():
             data["idRubro"] = random.getrandbits(10)
             data = rubro_single_schema.load(data)
         except ValidationError as e:
-            return jsonify(e.messages, 404)
+            return jsonify(e.messages, 404), 404
 
         new_rubro = Rubro(
             idRubro = data["idRubro"],
@@ -257,7 +257,7 @@ def create_reclamo():
             #data["images"] = images_string
             return jsonify(data)
         except ValidationError as e:
-            return jsonify(e.messages, 404)
+            return jsonify(e.messages, 404), 404
 
         new_reclamo = Reclamo(
             idReclamo=data["idReclamo"],
@@ -304,7 +304,7 @@ def create_desperfecto():
             data["idDesperfecto"] = random.getrandbits(10)
             data = desperfecto_single_schema.load(data)
         except ValidationError as e:
-            return jsonify(e.messages, 404)
+            return jsonify(e.messages, 404), 404
 
         new_desperfecto = Desperfecto(
             idDesperfecto = data['idDesperfecto'],
@@ -328,7 +328,7 @@ def create_denuncia():
             data["idDenuncia"] = random.getrandbits(64)
             data = denuncia_single_schema.load(data)
         except ValidationError as e:
-            return jsonify(e.messages, 404)
+            return jsonify(e.messages, 404), 404
 
         new_denuncia = Denuncia(
             idDenuncia = data["idDenuncia"],
@@ -352,7 +352,7 @@ def create_movimientos_reclamo():
             data["idMovimiento"] = random.getrandbits(64)
             data = movimientos_reclamo_single_schema.load(data)
         except ValidationError as e:
-            return jsonify(e.messages, 404)
+            return jsonify(e.messages, 404), 404
 
         new_movimientos_reclamo = MovimientosReclamo(
             idMovimiento = data["idMovimiento"],
@@ -376,7 +376,7 @@ def create_movimientos_denuncia():
             data["idMovimiento"] = random.getrandbits(64)
             data = movimientos_denuncia_single_schema.load(data)
         except ValidationError as e:
-            return jsonify(e.messages, 404)
+            return jsonify(e.messages, 404), 404
 
         new_movimientos_denuncia = MovimientosDenuncia(
             idMovimiento=data["idMovimiento"],
@@ -401,7 +401,7 @@ def create_barrio():
             data["idBarrio"] = random.getrandbits(64)
             data = movimientos_reclamo_single_schema.load(data)
         except ValidationError as e:
-            return jsonify(e.messages, 404)
+            return jsonify(e.messages, 404), 404
 
         new_barrio = Barrio(
             idBarrio=data.get("idBarrio"),
@@ -426,7 +426,7 @@ def vecino_create_password():
     try:
         data = vecino_register_password.load(data)
     except ValidationError as e:
-        return jsonify(e.messages, 404)
+        return jsonify(e.messages, 404), 404
 
     db_mongo.vecinos.insert_one({
         "_id": data["documento"],
@@ -442,7 +442,7 @@ def create_vecino():
         try:
             data = vecino_single_schema.load(data)
         except ValidationError as e:
-            return jsonify(e.messages, 404)
+            return jsonify(e.messages, 404), 404
 
         try:
             new_vecino = Vecino(
@@ -480,7 +480,7 @@ def vecino_login():
     try:
         data = vecino_register_password.load(data)
     except ValidationError as e:
-        return jsonify(e.messages, 404)
+        return jsonify(e.messages, 404), 404
 
     vecino = db_mongo.vecinos.find_one({"_id": data["documento"]})
 
@@ -515,7 +515,7 @@ def create_personal():
     try:
         data = create_personal_schema.load(data)
     except ValidationError as e:
-        return jsonify(e.messages, 404)
+        return jsonify(e.messages, 404), 404
 
     new_personal=Personal(
         legajo=data["legajo"],

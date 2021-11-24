@@ -485,12 +485,12 @@ def vecino_login():
     vecino = db_mongo.vecinos.find_one({"_id": data["documento"]})
 
     if not vecino:
-        return jsonify({"message": "El documento o password son erroneos"})
+        return jsonify({"message": "El documento o password son erroneos"}), 400
     
     if check_password_hash(vecino["password"], data["password"]):
         vecino = db.session.query(Vecino).filter_by(documento=data["documento"]).first()
         return jsonify(vecino_single_schema.dump(vecino))
-    return jsonify({"message": "El documento o password son erroneos"})
+    return jsonify({"message": "El documento o password son erroneos"}), 400
     
     
 

@@ -421,14 +421,18 @@ def create_barrio():
 def vecino_create_password():
     data = request.get_json()
     vecino = db_mongo.verified_vecino.find_one({"_id": data.get("documento")})
-    if vecino:
-        return jsonify({"message": "No autorizado"}, 404)
-    data = vecino_register_password.load(data)
+    if not vecino:
+        return jsonify({"message": "No autorizado"}, 400)
+    try:
+        data = vecino_register_password.load(data)
+    except ValidationError as e:
+        return jsonify(e.messages, 404)
+
     db_mongo.vecinos.insert_one({
         "_id": data["documento"],
         "password": generate_password_hash(data["password"], method="sha256")
     })
-    return jsonify({"message": "password created"})
+    return jsonify(vecino), 200
 
 
 @app.route("/vecinos", methods=["POST", "GET"])
@@ -460,9 +464,9 @@ def create_vecino():
 
 @app.route("/vecinos/verified/<documento>", methods=["GET"])
 def is_user_verified(documento):
-    vecino = db_mongo.verified_vecino.find_one({"_id": documento})
+    vecino = db_mongo.verified_vecino.find_one({"_id": int(documento)})
     if vecino:
-        return jsonify({"message": True})
+        return jsonify({"message": True, "vecino": vecino})
     
     return jsonify({"message": False})
 
@@ -470,7 +474,10 @@ def is_user_verified(documento):
 @app.route("/vecino/login", methods=["POST"])
 def vecino_login():
     data = request.get_json()
-    data = vecino_register_password.load(data)
+    try:
+        data = vecino_register_password.load(data)
+    except ValidationError as e:
+        return jsonify(e.messages, 404)
 
     vecino = db_mongo.vecinos.find_one({"_id": data["documento"]})
 

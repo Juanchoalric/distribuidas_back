@@ -444,17 +444,20 @@ def create_vecino():
         except ValidationError as e:
             return jsonify(e.messages, 404)
 
-        new_vecino = Vecino(
-            documento=data["documento"],
-            nombre=data["nombre"],
-            apellido=data["apellido"],
-            direccion=data["direccion"],
-            codigoBarrio=data["codigoBarrio"]
-            )
+        try:
+            new_vecino = Vecino(
+                documento=data["documento"],
+                nombre=data["nombre"],
+                apellido=data["apellido"],
+                direccion=data["direccion"],
+                codigoBarrio=data["codigoBarrio"]
+                )
 
-        db.session.add(new_vecino)
-        db.session.commit()
-        return jsonify({"message": "Vecino created"})
+            db.session.add(new_vecino)
+            db.session.commit()
+            return jsonify({"message": "Vecino created"})
+        except:
+            return jsonify({"response":"Vecino no creado", "code": 404}), 404
 
     if request.method == "GET":
         vecinos = db.session.query(Vecino).all()
@@ -487,6 +490,7 @@ def vecino_login():
     if check_password_hash(vecino["password"], data["password"]):
         vecino = db.session.query(Vecino).filter_by(documento=data["documento"]).first()
         return jsonify(vecino_single_schema.dump(vecino))
+    return jsonify({"message": "El documento o password son erroneos"})
     
     
 
@@ -495,10 +499,15 @@ def get_user():
     return ""
 
 
-@app.route("/vecinos/<vecino_id>", methods=["PUT"])
-def update_vecino():
-    return ""
-
+@app.route("/vecinos/<documento>", methods=["DELETE"])
+def delete_vecino(documento):
+    try:
+        vecino = db.session.query(Vecino).filter_by(documento=int(documento)).first()
+        db.session.delete(vecino)
+        db.session.commit()
+        return jsonify({"message": "Vecino borrado"})
+    except:
+        return jsonify({"message": "Vecino no borrado"})
 
 @app.route("/personal", methods=["POST"])
 def create_personal():

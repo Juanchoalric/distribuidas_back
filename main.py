@@ -162,6 +162,9 @@ class MovimientosDenuncia(db.Model):
 def create_publicidad():
     if request.method == "POST":
         data = request.get_json()
+        pub_ver = db_mongo.publicidad_verificacion.find_one({"_id": data.get("titulo")})
+        if not pub_ver:
+            return jsonify({"message": "Todavia no esta verificado"})
         try:
             data["idPublicidad"] = random.getrandbits(64)
             data = publicacion_schema.load(data)
@@ -176,7 +179,7 @@ def create_publicidad():
             "open": data["open"],
             "close": data["close"]
         })
-        return jsonify({"Message": "Publicidad Created"})
+        return jsonify({"message": "Publicidad Created"})
     if request.method == "GET":
         publicidad = db_mongo.publicidad.find({})
         return jsonify(publicaciones_schema.dump(publicidad))

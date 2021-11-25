@@ -134,7 +134,8 @@ class Reclamo(db.Model):
     IdReclamoUnificado = db.Column(db.Integer, db.ForeignKey("reclamos.idReclamo"))
 
 class Denuncia(db.Model):
-    idDenuncia = db.Column(db.Integer, primary_key=True)
+    __tablename__ = "denuncias"
+    idDenuncias = db.Column(db.Integer, primary_key=True)
     documento = db.Column(db.String, db.ForeignKey("vecinos.documento"), nullable=False)
     idSitio = db.Column(db.Integer, db.ForeignKey("sitios.idSitio"), nullable=True)
     descripcion = db.Column(db.String, nullable=True)
@@ -166,7 +167,7 @@ def create_publicidad():
         if not pub_ver:
             return jsonify({"message": "Todavia no esta verificado"})
         try:
-            data["idPublicidad"] = random.getrandbits(64)
+            data["idPublicidad"] = random.getrandbits(10)
             data = publicacion_schema.load(data)
         except ValidationError as e:
             return jsonify(e.messages, 404), 404
@@ -177,7 +178,8 @@ def create_publicidad():
             "descripcion": data["descripcion"],
             "type": data["type"],
             "open": data["open"],
-            "close": data["close"]
+            "close": data["close"],
+            "imagen": data["imagen"]
         })
         return jsonify({"message": "Publicidad Created"})
     if request.method == "GET":
@@ -241,24 +243,14 @@ def create_rubros():
         rubros = db.session.query(Rubro).all()
         return jsonify(rubro_schema.dump(rubros))
     
-@app.route("/reclamo", methods=["GET", "POST"])
+@app.route("/reclamo", methods=["GET", "POST", "DELETE"])
 def create_reclamo():
     if request.method == "POST":
         data = request.get_json()
-        """
-        try:
-            images_string = []
-            images = request.files["images"]
-        except:
-            return jsonify({"message": "No images passed"})
-        """
         try:
             data["idReclamo"] = random.getrandbits(10)
             data = reclamo_single_schema.load(data)
-            #for image in images:
-            #    images_string.append(base64.b64encode(image.read()))
-            #data["images"] = images_string
-            return jsonify(data)
+            db_mongo.reclamos_imagen.insert_one({"_id": data["idReclamo"], "imagen": data["imagen"]})
         except ValidationError as e:
             return jsonify(e.messages, 404), 404
 
@@ -271,31 +263,52 @@ def create_reclamo():
             estado = data["estado"],
             IdReclamoUnificado=data.get("IdReclamoUnificado", None),
         )
-        """
-        db_mongo.reclamo_images.insert_one({
-            "images": data["images"], 
-            "idReclamo": data["idReclamo"], 
-            "documento": data["documento"]})
-        """
+
         db.session.add(new_reclamo)
         db.session.commit()
         return jsonify({"message": "Reclamo Created"})
     if request.method == "GET":
         reclamos = db.session.query(Reclamo).all()
         reclamos = reclamo_schema.dump(reclamos)
-        #for reclamo in reclamos:
-        #    reclamo_images = db_mongo.reclamo_images.find_one({"_id": reclamo["idReclamo"]})
-        #    reclamo["images"] = reclamo_images["images"]
+        for reclamo in reclamos:
+            reclamo_images = db_mongo.reclamos_imagen.find_one({"_id": reclamo["idReclamo"]})
+            reclamo["imagen"] = reclamo_images.get("imagen", "")
         return jsonify(reclamos)
+    if request.method == "DELETE":
+        try:
+            db.session.query(Reclamo).delete()
+            #db.session.delete(reclamo)
+            db.session.commit()
+            return jsonify({"message": "Borrado de los reclamos"}), 200
+        except Exception as e:
+            return jsonify({"message": "no funciono"}), 404
 
 
 @app.route("/reclamo/<idReclamo>", methods=["GET"])
 def get_reclamo(idReclamo):
+    if request.method == "GET":
+        reclamo = db.session.query(Reclamo).filter_by(idReclamo=idReclamo).first()
+        reclamo_imagen = db_mongo.reclamos_imagen.find_one({"_id":idReclamo})
+        if not reclamo:
+            return jsonify({"message": "Reclamo mal ingresado"}, 404)
+        reclamo = reclamo_single_schema.dump(reclamo)
+        reclamo["imagen"] = reclamo_imagen["imagen"]
+        return jsonify(reclamo)
+
+@app.route('/reclamo/estado', methods=['PUT'])
+def update_reclamo_state():
+    estado = request.args.get('estado')
+    idReclamo = int(request.args.get('idReclamo'))
+
     reclamo = db.session.query(Reclamo).filter_by(idReclamo=idReclamo).first()
+
     if not reclamo:
-        return jsonify({"message": "Reclamo mal ingresado"}, 404)
-    reclamo = reclamo_single_schema.dump(reclamo)
-    return jsonify(reclamo)
+        return jsonify({"message": "El reclamo no existe"})
+
+    reclamo.estado = estado
+    db.session.commit()
+
+    return jsonify({"message": "El estado del reclamo se modifico correctamente"}, 200), 200
 
 
 @app.route('/desperfecto', methods=['GET', 'POST'])
@@ -328,31 +341,67 @@ def create_denuncia():
     if request.method == 'POST':
         data = request.get_json()
         try:
-            data["idDenuncia"] = random.getrandbits(64)
+            data["idDenuncias"] = random.getrandbits(10)
             data = denuncia_single_schema.load(data)
+            db_mongo.denuncias_imagen.insert_one({"_id": data["idDenuncias"], "imagen": data["imagen"]})
         except ValidationError as e:
             return jsonify(e.messages, 404), 404
 
         new_denuncia = Denuncia(
-            idDenuncia = data["idDenuncia"],
+            idDenuncias = data["idDenuncias"],
             documento = data["documento"],
             idSitio = data["idSitio"],
-            description = data["description"],
+            descripcion = data["descripcion"],
             estado = data["estado"],
             aceptaResponsabilidad = data["aceptaResponsabilidad"],
         )
         db.session.add(new_denuncia)
         db.session.commit()
+        return jsonify({"message": "Denuncia creada"}, 201), 201
+
     if request.method == "GET":
         denuncias = db.session.query(Denuncia).all()
-        return jsonify(denuncia_schema.dump(denuncias))
+        print(denuncias)
+        denuncias = denuncia_schema.dump(denuncias)
+        for denuncia in denuncias:
+            denuncia_images = db_mongo.denuncias_imagen.find_one({"_id": denuncia["idDenuncias"]})
+            denuncia["imagen"] = denuncia_images["imagen"]
+        return jsonify(denuncias)
+
+@app.route("/denuncia/<idDenuncias>", methods=["GET"])
+def get_denuncia(idDenuncias):
+    if request.method == "GET":
+        denuncia = db.session.query(Denuncia).filter_by(idDenuncias=idDenuncias).first()
+        denuncia_imagen = db_mongo.denuncias_imagen.find_one({"_id":int(idDenuncias)})
+        if not denuncia:
+            return jsonify({"message": "Reclamo mal ingresado"}, 404)
+        denuncia = denuncia_single_schema.dump(denuncia)
+        denuncia["imagen"] = denuncia_imagen["imagen"]
+        return jsonify(denuncia)
+
+
+@app.route('/denuncia/estado', methods=['PUT'])
+def update_denuncia_state():
+    estado = request.args.get('estado')
+    idDenuncias = int(request.args.get('idDenuncias'))
+
+    denuncia = db.session.query(Denuncia).filter_by(idDenuncias=idDenuncias).first()
+
+    if not denuncia:
+        return jsonify({"message": "La denuncia no existe"})
+
+    denuncia.estado = estado
+    db.session.commit()
+
+    return jsonify({"message": "El estado de la denuncia se modifico correctamente"}, 200), 200
+
 
 @app.route('/movimientosReclamo', methods=["GET", "POST"])
 def create_movimientos_reclamo():
     if request.method == "POST":
         data = request.get_json()
         try:
-            data["idMovimiento"] = random.getrandbits(64)
+            data["idMovimiento"] = random.getrandbits(10)
             data = movimientos_reclamo_single_schema.load(data)
         except ValidationError as e:
             return jsonify(e.messages, 404), 404
@@ -376,7 +425,7 @@ def create_movimientos_denuncia():
     if request.method == "POST":
         data = request.get_json()
         try:
-            data["idMovimiento"] = random.getrandbits(64)
+            data["idMovimiento"] = random.getrandbits(10)
             data = movimientos_denuncia_single_schema.load(data)
         except ValidationError as e:
             return jsonify(e.messages, 404), 404
@@ -401,7 +450,7 @@ def create_barrio():
         data = request.get_json()
 
         try:
-            data["idBarrio"] = random.getrandbits(64)
+            data["idBarrio"] = random.getrandbits(10)
             data = movimientos_reclamo_single_schema.load(data)
         except ValidationError as e:
             return jsonify(e.messages, 404), 404

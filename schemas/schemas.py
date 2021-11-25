@@ -56,6 +56,7 @@ class PublicacionSchema(Schema):
     type = fields.String(required=True)
     open = fields.String(required=True)
     close = fields.String(required=True)
+    imagen = fields.List(fields.String(), required=True)
 
 
 class RubroSchema(Schema):
@@ -75,19 +76,20 @@ class ReclamoSchema(Schema):
     descripcion = fields.String(required=True)
     estado = fields.String(required=True)
     IdReclamoUnificado = fields.Integer()
+    imagen = fields.List(fields.String(), required=True)
 
 class ReclamoImagenSchema(Schema):
     idReclamo = fields.Integer(required=True)
-    documento = fields.Integer(required=True)
     imagen = fields.List(fields.String())
 
 class DenunciaSchema(Schema):
-    idDenuncia = fields.Integer(required=True)
+    idDenuncias = fields.Integer(required=True)
     documento = fields.Integer(required=True)
     idSitio = fields.Integer(required=True)
     descripcion = fields.String(required=True)
     estado = fields.String(required=True)
     aceptaResponsabilidad = fields.Integer(required=True)
+    imagen = fields.List(fields.String(), required=True)
 
 class MovimientosReclamoSchema(Schema):
     idMovimiento = fields.Integer(required=True)

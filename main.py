@@ -277,16 +277,23 @@ def create_reclamo():
         db.session.commit()
         return jsonify({"message": "Reclamo Created"})
     if request.method == "GET":
+        rec_unif = []
+        unif_cod = []
         reclamos = db.session.query(Reclamo).all()
         reclamos = reclamo_schema.dump(reclamos)
         for reclamo in reclamos:
+            codigo = reclamo["idSitio"] + reclamo["idDesperfecto"]
+            if codigo not in unif_cod:
+                unif_cod.append(codigo)
+                rec_unif.append(reclamo)
+
+        for reclamo in rec_unif:
             reclamo_images = db_mongo.reclamos_imagen.find_one({"_id": reclamo["idReclamo"]})
             reclamo["imagen"] = reclamo_images.get("imagen", "")
         return jsonify(reclamos)
     if request.method == "DELETE":
         try:
             db.session.query(Reclamo).delete()
-            #db.session.delete(reclamo)
             db.session.commit()
             return jsonify({"message": "Borrado de los reclamos"}), 200
         except Exception as e:

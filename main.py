@@ -260,7 +260,7 @@ def create_reclamo():
             idSitio = data["idSitio"],
             idDesperfecto = data["idDesperfecto"],
             descripcion = data["descripcion"],
-            estado = data["estado"],
+            estado = data.get("estado", "Nuevo"),
             IdReclamoUnificado=data.get("IdReclamoUnificado", None),
         )
 

@@ -187,7 +187,7 @@ def create_publicidad():
         return jsonify(publicaciones_schema.dump(publicidad))
 
 
-@app.route("/sitio", methods=["POST", "GET"])
+@app.route("/sitio", methods=["POST", "GET", "DELETE"])
 def create_sitio():
     if request.method == "POST":
         data = request.get_json()
@@ -217,9 +217,18 @@ def create_sitio():
 
         db.session.add(new_sitio)
         db.session.commit()
+        return jsonify({"message": "Creado"}), 200
     if request.method == "GET":
         sitios = db.session.query(Sitio).all()
         return jsonify(sitio_schema.dump(sitios))
+    if request.method == "DELETE":
+        try:
+            db.session.query(Sitio).delete()
+            #db.session.delete(reclamo)
+            db.session.commit()
+            return jsonify({"message": "Sitio borrado"}), 200
+        except Exception as e:
+            return jsonify({"message": "Sitio no borrado"}), 404
 
 @app.route("/rubro", methods=["GET", "POST"])
 def create_rubros():
@@ -311,7 +320,7 @@ def update_reclamo_state():
     return jsonify({"message": "El estado del reclamo se modifico correctamente"}, 200), 200
 
 
-@app.route('/desperfecto', methods=['GET', 'POST'])
+@app.route('/desperfecto', methods=['GET', 'POST', "DELETE"])
 def create_desperfecto():
     
     if request.method == "POST":
@@ -334,6 +343,14 @@ def create_desperfecto():
     if request.method == 'GET':
         desperfectos = db.session.query(Desperfecto).all()
         return jsonify(desperfecto_schema.dump(desperfectos))
+    if request.method == "DELETE":
+        try:
+            db.session.query(Desperfecto).delete()
+            #db.session.delete(reclamo)
+            db.session.commit()
+            return jsonify({"message": "Desperfecto borrado"}), 200
+        except Exception as e:
+            return jsonify({"message": "Desperfecto no borrado"}), 404
 
 
 @app.route('/denuncia', methods=['POST', "GET"])

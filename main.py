@@ -377,13 +377,18 @@ def create_denuncia():
         return jsonify({"message": "Denuncia creada"}, 201), 201
 
     if request.method == "GET":
+        val_denuncias = []
         denuncias = db.session.query(Denuncia).all()
         print(denuncias)
         denuncias = denuncia_schema.dump(denuncias)
         for denuncia in denuncias:
-            denuncia_images = db_mongo.denuncias_imagen.find_one({"_id": denuncia["idDenuncias"]})
-            denuncia["imagen"] = denuncia_images["imagen"]
-        return jsonify(denuncias)
+            ver_denuncia = db_mongo.validar_denuncia.find_one({"_id":denuncia["idDenuncias"]})
+            if ver_denuncia:
+                denuncia_images = db_mongo.denuncias_imagen.find_one({"_id": denuncia["idDenuncias"]})
+                denuncia["imagen"] = denuncia_images["imagen"]
+                val_denuncias.append(denuncia)
+        val_denuncias = denuncia_schema.dump(val_denuncias)
+        return jsonify(val_denuncias)
 
 @app.route("/denuncia/<idDenuncias>", methods=["GET"])
 def get_denuncia(idDenuncias):
